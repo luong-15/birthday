@@ -382,7 +382,7 @@
             if (partyHornSound) {
                 partyHornSound.currentTime = 0;
                 partyHornSound.play().catch(error => {
-                    let errorMessage = "Lỗi không xác định khi phát âm thanh kèn party horn.";
+                    let errorMessage = "Lỗi khi phát âm thanh kèn party horn.";
                     if (error && error.name) {
                         errorMessage = `Lỗi khi phát âm thanh kèn party horn: ${error.name}`;
                         if (error.message) {
@@ -500,29 +500,64 @@
             displayMessage(birthdayMessages[randomIndex]);
         }
 
+        function setLocalStorageWithExpiry(key, value, expiryHours) {
+            const now = new Date();
+            const item = {
+                value: value,
+                expiry: now.getTime() + expiryHours * 60 * 60 * 1000,
+            };
+            localStorage.setItem(key, JSON.stringify(item));
+        }
+
+        function getLocalStorageWithExpiry(key) {
+            const itemStr = localStorage.getItem(key);
+            if (!itemStr) {
+                return null;
+            }
+            try {
+                const item = JSON.parse(itemStr);
+                if (typeof item === 'object' && item !== null && 'expiry' in item && 'value' in item) {
+                    const now = new Date();
+                    if (now.getTime() > item.expiry) {
+                        localStorage.removeItem(key);
+                        return null;
+                    }
+                    return item.value;
+                } else {
+                    console.warn(`Legacy localStorage item found for key "${key}". Removing it for re-saving in new format.`);
+                    localStorage.removeItem(key);
+                    return itemStr;
+                }
+            } catch (e) {
+                console.warn(`Lỗi khi phân tích cú pháp dữ liệu localStorage cho khóa "${key}": ${e.message}. Có thể đây là dữ liệu cũ. Đang xóa và sử dụng giá trị trực tiếp.`);
+                localStorage.removeItem(key);
+                return itemStr;
+            }
+        }
+
         function saveAvatarToLocalStorage(avatarDataUrl) {
             try {
-                localStorage.setItem('userAvatar', avatarDataUrl);
-                console.log('Avatar saved to localStorage.');
+                setLocalStorageWithExpiry('userAvatar', avatarDataUrl, 1);
+                console.log('Avatar saved to localStorage with 1-hour expiry.');
             } catch (e) {
                 console.error('Error saving avatar to localStorage:', e);
             }
         }
 
         function loadAvatarFromLocalStorage() {
-            const savedAvatar = localStorage.getItem('userAvatar');
+            const savedAvatar = getLocalStorageWithExpiry('userAvatar');
             if (savedAvatar) {
                 currentAvatarUrl = savedAvatar;
-                console.log('Avatar loaded from localStorage.');
+                console.log('Avatar loaded from localStorage (checked expiry).');
             } else {
-                console.log('No avatar found in localStorage, using default.');
+                console.log('No valid avatar found in localStorage or it has expired, using default.');
             }
         }
 
         function initializeDisplay() {
             loadAvatarFromLocalStorage();
 
-            if (localStorage.getItem('userAvatar')) {
+            if (getLocalStorageWithExpiry('userAvatar')) {
                 giftButtonContainer.style.display = 'none';
                 promptText.textContent = '🎊🎊🎊';
                 displayRandomMessage();
@@ -538,7 +573,7 @@
         document.addEventListener('DOMContentLoaded', initializeDisplay);
 
         giftButton.addEventListener('click', () => {
-            if (!localStorage.getItem('userAvatar')) {
+            if (!getLocalStorageWithExpiry('userAvatar')) {
                 giftButtonContainer.style.display = 'none';
                 promptText.textContent = 'Hãy tải lên ảnh đại diện của bạn! ✨';
                 initialAvatarPromptModal.classList.add('show');
@@ -561,7 +596,7 @@
 
         closeInitialAvatarPromptModalButton.addEventListener('click', () => {
             initialAvatarPromptModal.classList.remove('show');
-            if (!localStorage.getItem('userAvatar')) {
+            if (!getLocalStorageWithExpiry('userAvatar')) {
                 giftButtonContainer.style.display = 'block';
                 promptText.textContent = 'Hãy nhấn vào hộp quà để tạo bất ngờ nhé! ✨';
             }
@@ -588,7 +623,7 @@
 
         closeImageEditorModalButton.addEventListener('click', () => {
             imageEditorModal.classList.remove('show');
-            if (!localStorage.getItem('userAvatar')) {
+            if (!getLocalStorageWithExpiry('userAvatar')) {
                 initialAvatarPromptModal.classList.add('show');
             }
         });
