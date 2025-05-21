@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday!</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Pacifico&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+            position: relative;
+            z-index: 1;
+            background-color: #f0f2f5;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #ADD8E6, #90EE90, #FFC0CB, #FFFAF0);
+            background-size: 400% 400%;
+            animation: gradientAnimation 20s ease infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #app-container {
+            backdrop-filter: blur(15px);
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 2rem;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+            animation: fadeInScale 1s ease-out forwards;
+            max-width: 900px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            min-height: 60vh;
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.85); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        #confetti-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .confetti {
+            position: absolute;
+            background-color: #f0f;
+            opacity: 0;
+            animation: fall 4s forwards ease-out;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-100px) rotateZ(0deg) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(calc(100vh + 100px)) rotateZ(720deg) scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            10%, 30%, 50%, 70%, 90% { transform: rotate(-12deg); }
+            20%, 40%, 60%, 80% { transform: rotate(12deg); }
+        }
+
+        #giftButton:hover .gift-icon-shake {
+            animation: shake 0.7s cubic-bezier(.36,.07,.19,.97) both infinite;
+            transform-origin: center center;
+        }
+
+        #birthday-message {
+            background: linear-gradient(135deg, #FFFDE7, #FFFACD);
+            border: 5px solid #FFD700;
+            border-radius: 30px;
+            box-shadow: 0 15px 40px rgba(255, 215, 0, 0.5);
+            padding: 2.5rem;
+            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            font-size: 1.25rem;
+            line-height: 1.9;
+            color: #333;
+            text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.6);
+            max-width: 95%;
+            margin-top: 2.5rem;
+            transform: scale(0) translateY(50px);
+            opacity: 0;
+            will-change: transform, opacity;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        #birthday-message.show {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .avatar-frame {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 6px solid #FFD700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .avatar-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        #initialAvatarPromptModal,
+        #imageEditorModal {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #initialAvatarPromptModal.show,
+        #imageEditorModal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #initialAvatarPromptModal .modal-content,
+        #imageEditorModal .modal-content {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+
+        #initialAvatarPromptModal.show .modal-content,
+        #imageEditorModal.show .modal-content {
+            transform: translateY(0);
+        }
+
+        #imageEditorCanvas {
+            border: 1px solid #ddd;
+            border-radius: 0.5rem;
+            background-color: #f9f9f9;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        @media (max-width: 768px) {
+            #giftButtonInner {
+                font-size: 1.1rem;
+                padding: 1rem 2rem;
+            }
+            #app-container {
+                padding: 2rem;
+            }
+            .text-3xl {
+                font-size: 2.25rem;
+            }
+            .text-4xl {
+                font-size: 2.5rem;
+            }
+            #birthday-message {
+                font-size: 1.1rem;
+                padding: 2rem;
+            }
+            .avatar-frame {
+                width: 100px;
+                height: 100px;
+                margin-bottom: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #giftButtonInner {
+                font-size: 0.9rem;
+                padding: 0.7rem 1.2rem;
+            }
+            #app-container {
+                padding: 1rem;
+            }
+            .text-3xl {
+                font-size: 1.5rem;
+            }
+            .text-4xl {
+                font-size: 1.75rem;
+            }
+            #birthday-message {
+                font-size: 1rem;
+                padding: 1.25rem;
+            }
+            #randomMessageButton {
+                font-size: 0.8rem;
+                padding: 0.5rem 1rem;
+                bottom: 1rem;
+                right: 1rem;
+            }
+            .avatar-frame {
+                width: 80px;
+                height: 80px;
+                margin-bottom: 0.75rem;
+                border-width: 4px;
+            }
+            #initialAvatarPromptModal .modal-content,
+            #imageEditorModal .modal-content {
+                padding: 1.5rem;
+            }
+            #initialAvatarPromptModal h2,
+            #imageEditorModal h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans flex items-center justify-center p-4 min-h-screen">
+    <main id="app-container" class="relative rounded-3xl text-center mx-auto flex flex-col items-center justify-center">
+        <div id="confetti-container" aria-hidden="true"></div>
+
+        <p id="prompt-text" class="text-3xl md:text-4xl text-white mb-10 max-w-prose font-semibold leading-relaxed drop-shadow-lg">
+            </p>
+
+        <div class="relative group mb-4" id="giftButtonContainer">
+            <button id="giftButton" class="relative inline-block p-px font-semibold leading-6 text-white shadow-2xl cursor-pointer rounded-full shadow-zinc-900 transition-transform duration-300 ease-in-out hover:scale-105 active:scale-95">
+                <span class="absolute inset-0 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-700 p-[2px] opacity-0 transition-opacity duration-500 group-hover:opacity-100"></span>
+                <span id="giftButtonInner" class="relative z-10 block rounded-full bg-indigo-900 group-hover:bg-indigo-700 transition-colors duration-300 shadow-md hover:shadow-xl">
+                    <div class="relative z-10 flex items-center justify-center space-x-2 py-4 px-8 text-xl md:text-2xl">
+                        <span class="transition-all duration-500 group-hover:translate-x-1">Open Your Gift</span>
+                        <span class="ml-4 text-4xl transition-transform duration-300 group-hover:rotate-[30deg] gift-icon-shake group-hover:translate-x-1">🎁</span>
+                    </div>
+                </span>
+            </button>
+        </div>
+
+        <input type="file" id="avatarUpload" accept="image/*" class="hidden">
+
+        <section id="birthday-message" class="text-lg md:text-xl hidden" role="region" aria-live="polite">
+            </section>
+
+        <button id="randomMessageButton" class="absolute bottom-4 right-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-all duration-300 hidden" style="opacity: 0.02;">
+            Lời chúc khác ✨
+        </button>
+    </main>
+
+    <div id="initialAvatarPromptModal" class="hidden">
+        <div class="modal-content text-center">
+            <button id="closeInitialAvatarPromptModalButton" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Thêm ảnh đại diện của bạn</h2>
+            <p class="text-gray-600 mb-6">Nhấn vào khung avatar bên dưới để tải ảnh lên.</p>
+            <div class="avatar-frame mx-auto relative cursor-pointer group" id="initialAvatarFrame">
+                <img id="initialAvatarImg" src="https://placehold.co/120x120/808080/FFFFFF?text=Avatar" alt="Avatar Placeholder" class="w-full h-full object-cover rounded-full">
+                <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full">
+                    <i class="fas fa-camera text-white text-2xl"></i>
+                </div>
+            </div>
+            <p class="text-sm text-gray-500 mt-4">Bạn có thể thay đổi ảnh này sau.</p>
+        </div>
+    </div>
+
+    <div id="imageEditorModal" class="hidden">
+        <div class="modal-content">
+            <button id="closeImageEditorModalButton" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Chỉnh Sửa Avatar</h2>
+
+            <div class="flex flex-col items-center">
+                <canvas id="imageEditorCanvas" width="300" height="300" class="rounded-lg mb-4"></canvas>
+                <div class="flex space-x-4 mb-6">
+                    <button id="zoomInButton" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full transition-colors duration-200">
+                        <i class="fas fa-search-plus"></i> Phóng to
+                    </button>
+                    <button id="zoomOutButton" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full transition-colors duration-200">
+                        <i class="fas fa-search-minus"></i> Thu nhỏ
+                    </button>
+                </div>
+                <button id="applyImageButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-all duration-300 w-full">
+                    Áp dụng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="partyHornSound" src="https://cdn.pixabay.com/audio/2024/10/12/audio_65df3f47bb.mp3" preload="auto"></audio>
+
+    <script>
+        const giftButtonContainer = document.getElementById('giftButtonContainer');
+        const giftButton = document.getElementById('giftButton');
+        const birthdayMessage = document.getElementById('birthday-message');
+        const confettiContainer = document.getElementById('confetti-container');
+        const promptText = document.getElementById('prompt-text');
+        const avatarUpload = document.getElementById('avatarUpload');
+        const randomMessageButton = document.getElementById('randomMessageButton');
+
+        const initialAvatarPromptModal = document.getElementById('initialAvatarPromptModal');
+        const closeInitialAvatarPromptModalButton = document.getElementById('closeInitialAvatarPromptModalButton');
+        const initialAvatarFrame = document.getElementById('initialAvatarFrame');
+        const initialAvatarImg = document.getElementById('initialAvatarImg');
+
+        const imageEditorModal = document.getElementById('imageEditorModal');
+        const closeImageEditorModalButton = document.getElementById('closeImageEditorModalButton');
+        const imageEditorCanvas = document.getElementById('imageEditorCanvas');
+        const ctx = imageEditorCanvas.getContext('2d');
+        const zoomInButton = document.getElementById('zoomInButton');
+        const zoomOutButton = document.getElementById('zoomOutButton');
+        const applyImageButton = document.getElementById('applyImageButton');
+
+        const partyHornSound = document.getElementById('partyHornSound');
+
+        let currentAvatarUrl = "https://placehold.co/120x120/808080/FFFFFF?text=Avatar";
+        let uploadedImage = new Image();
+        let scale = 1;
+        let offsetX = 0;
+        let offsetY = 0;
+        let isDragging = false;
+        let startX, startY;
+
+        const birthdayMessages = [
+            "Chúc mừng sinh nhật! Một năm nữa lại đến, chúc bạn luôn dồi dào sức khỏe, ngập tràn niềm vui và hạnh phúc. Mong rằng tuổi mới sẽ mang đến thật nhiều cơ hội mới, những thành công rực rỡ và mọi ước mơ đều trở thành hiện thực. Hãy tận hưởng ngày đặc biệt này thật trọn vẹn bên những người thân yêu nhé! 🎉🎂✨",
+            "Sinh nhật vui vẻ nhé! Gửi đến bạn những lời chúc tốt đẹp nhất trong ngày đặc biệt này. Chúc bạn luôn giữ vững nụ cười trên môi, trái tim luôn ấm áp và tâm hồn luôn tràn đầy năng lượng tích cực. Hãy biến mọi khó khăn thành động lực và sống mỗi ngày thật ý nghĩa. Happy Birthday! 🎈💖🌟",
+            "Gửi những lời chúc chân thành nhất đến bạn trong ngày sinh nhật! Chúc bạn một tuổi mới tràn đầy năng lượng, nhiệt huyết, gặt hái được nhiều thành công hơn nữa trên con đường mình đã chọn. Mong bạn luôn được yêu thương, bao bọc và có những khoảnh khắc đáng nhớ trong cuộc sống. 🥳🎁🍀",
+            "Chúc mừng sinh nhật! Hy vọng hôm nay là một ngày ngập tràn tiếng cười, tình yêu và những bất ngờ thú vị. Chúc bạn luôn mạnh khỏe, bình an, hạnh phúc và may mắn trong mọi việc. Cầu mong mọi điều tốt đẹp nhất sẽ đến với bạn trong tuổi mới. ❤️😊🌻",
+            "Một năm nữa trôi qua, và bạn lại thêm một tuổi. Chúc mừng sinh nhật! Chúc bạn luôn trẻ trung, năng động, giữ vững đam mê và nhiệt huyết để chinh phục mọi thử thách. Hãy luôn là chính mình, tỏa sáng theo cách riêng và đừng quên tận hưởng từng khoảnh khắc của cuộc sống. 🎊🥂🌈",
+            "Sinh nhật an lành và hạnh phúc bên gia đình, bạn bè nhé! Chúc bạn có một ngày kỷ niệm thật ấm áp, ý nghĩa và khó quên. Mong rằng tuổi mới sẽ mang đến cho bạn thật nhiều niềm vui, sự thịnh vượng và những điều kỳ diệu. Luôn yêu đời và sống thật trọn vẹn nhé! 🤗🏡🎉",
+            "Chúc mừng sinh nhật người bạn tuyệt vời! Luôn giữ nụ cười trên môi, vì nụ cười của bạn mang lại ánh sáng cho mọi người xung quanh. Chúc bạn luôn tìm thấy niềm vui trong những điều nhỏ bé, luôn được yêu thương và trân trọng. Happy B-day! 🥰✨💖",
+            "Tuổi mới thật nhiều may mắn và thành công rực rỡ! Chúc mừng sinh nhật! Hãy tự tin bước đi trên con đường mình đã chọn, không ngừng học hỏi và phát triển bản thân. Mọi cố gắng của bạn sẽ được đền đáp xứng đáng. Chúc bạn một năm mới tràn đầy năng lượng và đột phá! 💪🌟🚀",
+            "Hãy tận hưởng ngày sinh nhật thật đáng nhớ nhé! Chúc bạn có một bữa tiệc thật vui vẻ, ấm cúng và tràn ngập hạnh phúc bên những người thân yêu. Mong rằng bạn sẽ luôn được bao bọc bởi tình yêu thương, sự quan tâm và những điều tốt đẹp nhất. Chúc mừng sinh nhật! 🎂🎈🥳",
+            "Chúc bạn có một ngày sinh nhật thật ý nghĩa và ấm áp. Chúc mừng sinh nhật! Mong rằng mọi điều ước của bạn trong ngày hôm nay sẽ sớm trở thành hiện thực. Hãy luôn sống với niềm đam mê, hoài bão và không ngừng vươn tới những đỉnh cao mới. Happy Birthday!💫💖🌟"
+        ];
+
+        function playPartyHornSound() {
+            if (partyHornSound) {
+                partyHornSound.currentTime = 0;
+                partyHornSound.play().catch(error => {
+                    let errorMessage = "Lỗi không xác định khi phát âm thanh kèn party horn.";
+                    if (error && error.name) {
+                        errorMessage = `Lỗi khi phát âm thanh kèn party horn: ${error.name}`;
+                        if (error.message) {
+                            errorMessage += ` - ${error.message}`;
+                        }
+                    } else if (error) {
+                        errorMessage = `Lỗi khi phát âm thanh kèn party horn: ${JSON.stringify(error)}`;
+                    }
+                    console.error(errorMessage);
+
+                    if (error && error.name === 'NotAllowedError') {
+                        console.warn("Trình duyệt có thể đã chặn tự động phát âm thanh. Vui lòng tương tác với trang để cho phép âm thanh.");
+                    }
+                });
+            }
+        }
+
+        function createConfetti() {
+            const colors = [
+                '#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4',
+                '#00bcd4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107',
+                '#FF9800', '#FF5722', '#FFD700', '#ADFF2F', '#00FFFF', '#FF69B4'
+            ];
+            const shapes = ['50%', '0'];
+            const numConfetti = 150;
+
+            for (let i = 0; i < numConfetti; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = Math.random() * -20 + 'vh';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                confetti.style.animationDelay = (Math.random() * 1.5) + 's';
+                const size = (Math.random() * 10 + 6) + 'px';
+                confetti.style.width = size;
+                confetti.style.height = size;
+                confetti.style.borderRadius = shapes[Math.floor(Math.random() * shapes.length)];
+                confetti.style.transform = `rotateZ(${Math.random() * 360}deg)`;
+                confettiContainer.appendChild(confetti);
+
+                confetti.addEventListener('animationend', () => {
+                    confetti.remove();
+                });
+            }
+            playPartyHornSound();
+        }
+
+        function drawAvatarOnCanvas() {
+            ctx.clearRect(0, 0, imageEditorCanvas.width, imageEditorCanvas.height);
+            if (uploadedImage.src) {
+                ctx.save();
+
+                ctx.beginPath();
+                ctx.arc(imageEditorCanvas.width / 2, imageEditorCanvas.height / 2, Math.min(imageEditorCanvas.width, imageEditorCanvas.height) / 2, 0, Math.PI * 2);
+                ctx.clip();
+
+                const imgWidth = uploadedImage.width * scale;
+                const imgHeight = uploadedImage.height * scale;
+                const x = offsetX + (imageEditorCanvas.width - imgWidth) / 2;
+                const y = offsetY + (imageEditorCanvas.height - imgHeight) / 2;
+
+                ctx.drawImage(uploadedImage, x, y, imgWidth, imgHeight);
+
+                ctx.restore();
+            }
+        }
+
+        function displayMessage(message) {
+            let avatarDiv = document.getElementById('avatarFrame');
+            let avatarImg = document.getElementById('currentAvatarImg');
+
+            if (!avatarDiv) {
+                avatarDiv = document.createElement('div');
+                avatarDiv.classList.add('avatar-frame', 'relative', 'cursor-pointer', 'group');
+                avatarDiv.id = 'avatarFrame';
+
+                avatarImg = document.createElement('img');
+                avatarImg.id = 'currentAvatarImg';
+                avatarImg.alt = "Avatar";
+                avatarImg.onerror = function() { this.src = 'https://placehold.co/120x120/808080/FFFFFF?text=Error'; };
+                avatarDiv.appendChild(avatarImg);
+
+                const overlayDiv = document.createElement('div');
+                overlayDiv.classList.add('absolute', 'inset-0', 'flex', 'items-center', 'justify-center', 'bg-black', 'bg-opacity-50', 'opacity-0', 'group-hover:opacity-100', 'transition-opacity', 'duration-300', 'rounded-full');
+                const cameraIcon = document.createElement('i');
+                cameraIcon.classList.add('fas', 'fa-camera', 'text-white', 'text-2xl');
+                overlayDiv.appendChild(cameraIcon);
+                avatarDiv.appendChild(overlayDiv);
+
+                avatarDiv.addEventListener('click', () => {
+                    avatarUpload.click();
+                });
+
+                birthdayMessage.prepend(avatarDiv);
+            }
+
+            avatarImg.src = currentAvatarUrl;
+
+            let messageContentContainer = birthdayMessage.querySelector('.message-content-container');
+            if (!messageContentContainer) {
+                messageContentContainer = document.createElement('div');
+                messageContentContainer.classList.add('message-content-container');
+                birthdayMessage.appendChild(messageContentContainer);
+            }
+
+            messageContentContainer.innerHTML = `<p class="font-pacifico text-3xl md:text-4xl leading-tight mb-4 text-yellow-800">Happy Birthday!🎉</p><p>${message}</p>`;
+
+            birthdayMessage.classList.remove('hidden');
+            requestAnimationFrame(() => birthdayMessage.classList.add('show'));
+        }
+
+        function displayRandomMessage() {
+            const randomIndex = Math.floor(Math.random() * birthdayMessages.length);
+            displayMessage(birthdayMessages[randomIndex]);
+        }
+
+        function saveAvatarToLocalStorage(avatarDataUrl) {
+            try {
+                localStorage.setItem('userAvatar', avatarDataUrl);
+                console.log('Avatar saved to localStorage.');
+            } catch (e) {
+                console.error('Error saving avatar to localStorage:', e);
+            }
+        }
+
+        function loadAvatarFromLocalStorage() {
+            const savedAvatar = localStorage.getItem('userAvatar');
+            if (savedAvatar) {
+                currentAvatarUrl = savedAvatar;
+                console.log('Avatar loaded from localStorage.');
+            } else {
+                console.log('No avatar found in localStorage, using default.');
+            }
+        }
+
+        function initializeDisplay() {
+            loadAvatarFromLocalStorage();
+
+            if (localStorage.getItem('userAvatar')) {
+                giftButtonContainer.style.display = 'none';
+                promptText.textContent = '🎊🎊🎊';
+                displayRandomMessage();
+                randomMessageButton.classList.remove('hidden');
+            } else {
+                giftButtonContainer.style.display = 'block';
+                promptText.textContent = 'Hãy nhấn vào hộp quà để tạo bất ngờ nhé! ✨';
+                birthdayMessage.classList.add('hidden');
+                randomMessageButton.classList.add('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeDisplay);
+
+        giftButton.addEventListener('click', () => {
+            if (!localStorage.getItem('userAvatar')) {
+                giftButtonContainer.style.display = 'none';
+                promptText.textContent = 'Hãy tải lên ảnh đại diện của bạn! ✨';
+                initialAvatarPromptModal.classList.add('show');
+            } else {
+                giftButtonContainer.style.display = 'none';
+                promptText.textContent = '🎊🎊🎊';
+                displayRandomMessage();
+                randomMessageButton.classList.remove('hidden');
+                createConfetti();
+            }
+        });
+
+        randomMessageButton.addEventListener('click', () => {
+            displayRandomMessage();
+        });
+
+        initialAvatarFrame.addEventListener('click', () => {
+            avatarUpload.click();
+        });
+
+        closeInitialAvatarPromptModalButton.addEventListener('click', () => {
+            initialAvatarPromptModal.classList.remove('show');
+            if (!localStorage.getItem('userAvatar')) {
+                giftButtonContainer.style.display = 'block';
+                promptText.textContent = 'Hãy nhấn vào hộp quà để tạo bất ngờ nhé! ✨';
+            }
+        });
+
+        avatarUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    uploadedImage.src = e.target.result;
+                    uploadedImage.onload = () => {
+                        scale = Math.max(imageEditorCanvas.width / uploadedImage.width, imageEditorCanvas.height / uploadedImage.height);
+                        offsetX = 0;
+                        offsetY = 0;
+                        drawAvatarOnCanvas();
+                        initialAvatarPromptModal.classList.remove('show');
+                        imageEditorModal.classList.add('show');
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        closeImageEditorModalButton.addEventListener('click', () => {
+            imageEditorModal.classList.remove('show');
+            if (!localStorage.getItem('userAvatar')) {
+                initialAvatarPromptModal.classList.add('show');
+            }
+        });
+
+        zoomInButton.addEventListener('click', () => {
+            scale *= 1.1;
+            drawAvatarOnCanvas();
+        });
+
+        zoomOutButton.addEventListener('click', () => {
+            scale /= 1.1;
+            drawAvatarOnCanvas();
+        });
+
+        applyImageButton.addEventListener('click', () => {
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            const size = 120;
+            tempCanvas.width = size;
+            tempCanvas.height = size;
+
+            tempCtx.beginPath();
+            tempCtx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+            tempCtx.clip();
+
+            const imgWidth = uploadedImage.width * scale;
+            const imgHeight = uploadedImage.height * scale;
+
+            const x = offsetX + (imageEditorCanvas.width - imgWidth) / 2;
+            const y = offsetY + (imageEditorCanvas.height - imgHeight) / 2;
+
+            const ratio = size / imageEditorCanvas.width;
+            tempCtx.drawImage(uploadedImage, x * ratio, y * ratio, imgWidth * ratio, imgHeight * ratio);
+
+            currentAvatarUrl = tempCanvas.toDataURL('image/png');
+            const existingAvatarImg = document.getElementById('currentAvatarImg');
+            if (existingAvatarImg) {
+                existingAvatarImg.src = currentAvatarUrl;
+            }
+            saveAvatarToLocalStorage(currentAvatarUrl);
+            imageEditorModal.classList.remove('show');
+
+            if (promptText.textContent === 'Hãy tải lên ảnh đại diện của bạn! ✨') {
+                promptText.textContent = '🎊🎊🎊';
+                displayRandomMessage();
+                randomMessageButton.classList.remove('hidden');
+                createConfetti();
+            }
+        });
+
+        imageEditorCanvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            imageEditorCanvas.style.cursor = 'grabbing';
+        });
+
+        imageEditorCanvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            offsetX += dx;
+            offsetY += dy;
+            startX = e.clientX;
+            startY = e.clientY;
+            drawAvatarOnCanvas();
+        });
+
+        imageEditorCanvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            imageEditorCanvas.style.cursor = 'grab';
+        });
+
+        imageEditorCanvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+            imageEditorCanvas.style.cursor = 'grab';
+        });
+
+        imageEditorCanvas.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            imageEditorCanvas.style.cursor = 'grabbing';
+        }, { passive: false });
+
+        imageEditorCanvas.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const dx = e.touches[0].clientX - startX;
+            const dy = e.touches[0].clientY - startY;
+            offsetX += dx;
+            offsetY += dy;
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            drawAvatarOnCanvas();
+            e.preventDefault();
+        }, { passive: false });
+
+        imageEditorCanvas.addEventListener('touchend', () => {
+            isDragging = false;
+            imageEditorCanvas.style.cursor = 'grab';
+        });
+    </script>
+</body>
+</html>
